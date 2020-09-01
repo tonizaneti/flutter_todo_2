@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:todo_app/models/todo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_app/models/Todo.dart';
 import 'package:todo_app/screens/todo_item.dart';
 
 class TodoList extends StatefulWidget {
@@ -15,15 +18,20 @@ class _TodoListState extends State<TodoList> {
   @override
   void initState() {
     super.initState();
-
-    Todo todo = Todo();
-    todo.titulo='Titulo Teste';
-    todo.descricao='Descricao Testers';
-    setState(() {
-      list.add(todo);
-    });
-
+    _reloadList();
   }
+  _reloadList() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var data = prefs.getString('list');
+    if(data!= null){
+      setState(() {
+        var objs = jsonDecode(data) as List;
+        list = objs.map((obj) => Todo.fromJson(obj)).toList();
+      });
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +50,7 @@ class _TodoListState extends State<TodoList> {
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => TodoItem(),
+                  builder: (context) => TodoItem(todo: list[index]),
                 )),
           );
         },
@@ -51,7 +59,7 @@ class _TodoListState extends State<TodoList> {
         backgroundColor: Colors.green,
         child: Icon(Icons.add),
         onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (context) => TodoItem())),
+            context, MaterialPageRoute(builder: (context) => TodoItem(todo: null,))),
       ),
     );
   }
