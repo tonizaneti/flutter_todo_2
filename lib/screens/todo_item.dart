@@ -7,18 +7,24 @@ import 'package:todo_app/models/Todo.dart';
 
 class TodoItem extends StatefulWidget {
   final Todo todo;
-  TodoItem({Key key, @required this.todo}) : super (key: key);
+  final int index;
+
+  TodoItem({Key key, @required this.todo, @required this.index}) : super (key: key);
   @override
-  _TodoItemState createState() => _TodoItemState(todo);
+  _TodoItemState createState() => _TodoItemState(todo, index);
 }
 
 class _TodoItemState extends State<TodoItem> {
   Todo _todo;
+  int _index;
   final _tituloController = TextEditingController();
   final _descricaoController = TextEditingController();
 
-  _TodoItemState(Todo todo){
+  final key = GlobalKey<ScaffoldState>();
+
+  _TodoItemState(Todo todo, int index){
     this._todo = todo;
+    this._index = index;
     if(_todo !=null)
       {
         _tituloController.text = _todo.titulo;
@@ -28,24 +34,40 @@ class _TodoItemState extends State<TodoItem> {
   }
 
   _saveItem() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<Todo> list = [];
+    if(_tituloController.text.isEmpty || _descricaoController.text.isEmpty){
+      key.currentState.showSnackBar(SnackBar(
+        content:Text('Tipo e Descrição São Obrigatórios.')
+      ));
+    }else{
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<Todo> list = [];
 
-    var data = prefs.getString('list');
-    if (data != null) {
+      var data = prefs.getString('list');
+      if (data != null) {
       var objs = jsonDecode(data) as List;
       list = objs.map((obj) => Todo.fromJson(obj)).toList();
-    }
+      }
 
-    _todo = Todo.fromTituloDescricao(
-        _tituloController.text, _descricaoController.text);
-        list.add(_todo);
-        prefs.setString('list', jsonEncode(list));
+      _todo = Todo.fromTituloDescricao(
+      _tituloController.text, _descricaoController.text);
+      if(_index != -1)
+      {
+      list[_index]=_todo;
+      }
+      else
+      {
+      list.add(_todo);
+      }
+      prefs.setString('list', jsonEncode(list));
+      Navigator.pop(context);
+      }
+
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key : key,
       appBar: AppBar(
           backgroundColor: Colors.green,
           title: Text('Todo Item - Toni Zaneti')),
